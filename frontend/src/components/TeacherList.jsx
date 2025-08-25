@@ -1,17 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { getTeachers } from "../services/api";
 import CreateTeacherForm from "./CreateTeacherForm";
-const [openForm, setOpenForm] = useState(false);
-const [selectedTeacher, setSelectedTeacher] = useState(null);
 
 const TeacherList = () => {
+  const [openForm, setOpenForm] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [teachers, setTeachers] = useState([]);
   const [page, setPage] = useState(1);
 
   const fetchData = async () => {
     try {
       const res = await getTeachers(page);
-      setTeachers(res.data);
+      // ✅ lấy đúng mảng teachers
+      setTeachers(res.data.data);
     } catch (err) {
       console.error("Lỗi khi lấy giáo viên:", err);
     }
@@ -37,64 +38,76 @@ const TeacherList = () => {
           </tr>
         </thead>
         <tbody>
-          {teachers.map((t, i) => (
-            <tr key={t.code} className="border-t hover:bg-gray-50">
-              <td className="px-4 py-2 text-gray-800">{t.code}</td>
-              <td className="px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <img
-                    src={`https://i.pravatar.cc/40?u=${t.user?.email}`}
-                    alt="avatar"
-                    className="w-10 h-10 rounded-full"
-                  />
-
-                  <div>
-                    <p className="font-medium">{t.user?.name}</p>
-                    <p className="text-sm text-gray-500">{t.user?.email}</p>
-                    <p className="text-sm text-gray-500">{t.user?.phoneNumber}</p>
+          {Array.isArray(teachers) && teachers.length > 0 ? (
+            teachers.map((t) => (
+              <tr key={t.code} className="border-t hover:bg-gray-50">
+                <td className="px-4 py-2 text-gray-800">{t.code}</td>
+                <td className="px-4 py-2">
+                  <div className="flex items-center gap-2">
+                    <img
+                      src={`https://i.pravatar.cc/40?u=${t.userId?.email}`}
+                      alt="avatar"
+                      className="w-10 h-10 rounded-full"
+                    />
+                    <div>
+                      <p className="font-medium">{t.userId?.name}</p>
+                      <p className="text-sm text-gray-500">{t.userId?.email}</p>
+                      <p className="text-sm text-gray-500">{t.userId?.phoneNumber}</p>
+                    </div>
                   </div>
-                </div>
-              </td>
-              <td className="px-4 py-2 text-gray-700">
-                {t.degrees?.length > 0 && (
-                  <>
-                    <div><b>Bậc:</b> {t.degrees.at(-1).type}</div>
-                    <div><b>Chuyên ngành:</b> {t.degrees.at(-1).major}</div>
-                  </>
-                )}
-              </td>
-              <td className="px-4 py-2 text-gray-500 italic">N/A</td>
-              <td className="px-4 py-2">
-                {t.teacherPositions?.map((p) => p.name).join(", ") || "-"}
-              </td>
-              <td className="px-4 py-2">{t.user?.address || "-"}</td>
-              <td className="px-4 py-2">
-                {t.isActive ? (
-                  <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
-                    Đang công tác
-                  </span>
-                ) : (
-                  <span className="px-2 py-1 bg-gray-200 text-gray-600 rounded text-xs">
-                    Ngưng hoạt động
-                  </span>
-                )}
-              </td>
-              <td className="px-4 py-2 text-center">
-                <button
-                  className="text-blue-600 hover:underline text-sm"
-                  onClick={() => {
-                    setSelectedTeacher(teacher); // truyền data giáo viên cần sửa
-                    setOpenForm(true); // mở Drawer/Form
-                  }}
-                >
-                  👁 Chi tiết
-                </button>
+                </td>
+                <td className="px-4 py-2 text-gray-700">
+                  {t.degrees?.length > 0 && (
+                    <>
+                      <div>
+                        <b>Bậc:</b> {t.degrees.at(-1).type}
+                      </div>
+                      <div>
+                        <b>Chuyên ngành:</b> {t.degrees.at(-1).major}
+                      </div>
+                    </>
+                  )}
+                </td>
+                <td className="px-4 py-2 text-gray-500 italic">N/A</td>
+                <td className="px-4 py-2">
+                  {t.teacherPositionsId?.map((pos) => pos.name).join(", ") || "-"}
+                </td>
+                <td className="px-4 py-2">{t.userId?.address || "-"}</td>
+                <td className="px-4 py-2">
+                  {t.isActive ? (
+                    <span className="px-2 py-1 bg-green-100 text-green-800 rounded text-xs font-semibold">
+                      Đang công tác
+                    </span>
+                  ) : (
+                    <span className="px-2 py-1 bg-gray-200 text-gray-600 rounded text-xs">
+                      Ngưng hoạt động
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-2 text-center">
+                  <button
+                    className="text-blue-600 hover:underline text-sm"
+                    onClick={() => {
+                      setSelectedTeacher(t);
+                      setOpenForm(true);
+                    }}
+                  >
+                    👁 Chi tiết
+                  </button>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="8" className="text-center py-4 text-gray-500">
+                Không có giáo viên nào
               </td>
             </tr>
-          ))}
+          )}
         </tbody>
       </table>
 
+      {/* Pagination */}
       <div className="flex justify-between items-center mt-4 text-sm">
         <button
           onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -110,6 +123,29 @@ const TeacherList = () => {
           Trang sau →
         </button>
       </div>
+
+      {/* Form chỉnh sửa */}
+      {openForm && selectedTeacher && (
+        <CreateTeacherForm
+          mode="edit"
+          teacherData={{
+            _id: selectedTeacher._id,
+            name: selectedTeacher.userId?.name || "",
+            email: selectedTeacher.userId?.email || "",
+            phoneNumber: selectedTeacher.userId?.phoneNumber || "",
+            identity: selectedTeacher.userId?.identity || "",
+            address: selectedTeacher.userId?.address || "",
+            dob: selectedTeacher.userId?.dob || "",
+            degrees: selectedTeacher.degrees || [],
+            teacherPositions: selectedTeacher.teacherPositions || [],
+            avatarUrl: `https://i.pravatar.cc/120?u=${selectedTeacher.userId?.email}`,
+          }}
+          onClose={() => {
+            setOpenForm(false);
+            setSelectedTeacher(null);
+          }}
+        />
+      )}
     </div>
   );
 };

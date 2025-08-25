@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { createTeacher, getPositions } from "../services/api";
+import { createTeacher, getPositions, updateTeacher } from "../services/api";
 
 const CreateTeacherForm = ({ onClose, mode = "create", teacherData = null }) => {
 
@@ -24,6 +24,26 @@ const CreateTeacherForm = ({ onClose, mode = "create", teacherData = null }) => 
   });
 
   const [positions, setPositions] = useState([]);
+
+  useEffect(() => {
+    if (mode === "edit" && teacherData) {
+      setForm({
+        name: teacherData.name || "",
+        email: teacherData.email || "",
+        phoneNumber: teacherData.phoneNumber || "",
+        address: teacherData.address || "",
+        identity: teacherData.identity || "",
+        dob: teacherData.dob?.slice(0, 10) || "",
+        degrees: teacherData.degrees || [],
+        teacherPositions: teacherData.teacherPositions?.map(p => p._id || p) || [],
+        avatar: null,
+      });
+
+      if (teacherData.avatarUrl) {
+        setPreview(teacherData.avatarUrl);
+      }
+    }
+  }, [mode, teacherData]);
 
   useEffect(() => {
     getPositions().then((res) => setPositions(res.data));
@@ -60,20 +80,35 @@ const CreateTeacherForm = ({ onClose, mode = "create", teacherData = null }) => 
       teacherPositions: form.teacherPositions,
       degrees: form.degrees,
     };
+
     try {
-      await createTeacher(payload);
-      alert("Tạo giáo viên thành công!");
+      if (mode === "edit" && teacherData && teacherData._id) {
+        await updateTeacher(teacherData._id, form);
+        alert("Cập nhật giáo viên thành công!");
+      } else {
+        await createTeacher(payload);
+        alert("Tạo giáo viên thành công!");
+      }
+
       onClose();
     } catch (err) {
       console.error(err);
-      alert("Tạo thất bại!");
+      if (err.response?.data?.message) {
+        alert("Lỗi: " + err.response.data.message);
+      } else if (err.message) {
+        alert("Lỗi: " + err.message);
+      } else {
+        alert("Thao tác thất bại!");
+      }
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-40 flex justify-center items-start pt-12 z-50">
       <div className="bg-white w-[90%] max-w-5xl p-6 rounded shadow relative">
-        <h2 className="text-xl font-semibold mb-4 border-b pb-2">Tạo thông tin giáo viên</h2>
+        <h2 className="text-xl font-semibold mb-4 border-b pb-2">
+          {mode === "edit" ? "Cập nhật thông tin giáo viên" : "Tạo thông tin giáo viên"}
+        </h2>
         <form onSubmit={handleSubmit} className="space-y-6">
 
           {/* Thông tin cá nhân */}
@@ -96,6 +131,7 @@ const CreateTeacherForm = ({ onClose, mode = "create", teacherData = null }) => 
                   <label className="text-sm font-medium">* Họ và tên</label>
                   <input
                     name="name"
+                    value={form.name}
                     onChange={handleChange}
                     required
                     placeholder="VD: Nguyễn Văn A"
@@ -107,6 +143,7 @@ const CreateTeacherForm = ({ onClose, mode = "create", teacherData = null }) => 
                   <input
                     type="date"
                     name="dob"
+                    value={form.dob}
                     onChange={handleChange}
                     required
                     className="mt-1 p-2 border rounded w-full"
@@ -116,6 +153,7 @@ const CreateTeacherForm = ({ onClose, mode = "create", teacherData = null }) => 
                   <label className="text-sm font-medium">* Số điện thoại</label>
                   <input
                     name="phoneNumber"
+                    value={form.phoneNumber}
                     onChange={handleChange}
                     placeholder="Nhập số điện thoại"
                     className="mt-1 p-2 border rounded w-full"
@@ -126,6 +164,7 @@ const CreateTeacherForm = ({ onClose, mode = "create", teacherData = null }) => 
                   <input
                     name="email"
                     type="email"
+                    value={form.email}
                     onChange={handleChange}
                     placeholder="example@school.edu.vn"
                     className="mt-1 p-2 border rounded w-full"
@@ -136,6 +175,7 @@ const CreateTeacherForm = ({ onClose, mode = "create", teacherData = null }) => 
                   <label className="text-sm font-medium">* Số CCCD</label>
                   <input
                     name="identity"
+                    value={form.identity}
                     onChange={handleChange}
                     placeholder="Nhập số CCCD"
                     className="mt-1 p-2 border rounded w-full"
@@ -145,6 +185,7 @@ const CreateTeacherForm = ({ onClose, mode = "create", teacherData = null }) => 
                   <label className="text-sm font-medium">* Địa chỉ</label>
                   <input
                     name="address"
+                    value={form.address}
                     onChange={handleChange}
                     placeholder="Địa chỉ thường trú"
                     className="mt-1 p-2 border rounded w-full"
@@ -265,7 +306,7 @@ const CreateTeacherForm = ({ onClose, mode = "create", teacherData = null }) => 
               type="submit"
               className="bg-blue-600 text-white px-5 py-2 rounded hover:bg-blue-700"
             >
-              💾 Lưu
+              {mode === "edit" ? "🔄 Cập nhật" : "💾 Lưu"}
             </button>
           </div>
         </form>

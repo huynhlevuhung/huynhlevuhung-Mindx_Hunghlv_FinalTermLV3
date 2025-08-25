@@ -1,22 +1,42 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
-const teacherSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  isActive: { type: Boolean, default: true },
-  isDeleted: { type: Boolean, default: false },
-  code: { type: String, required: true, unique: true }, // 10 số
-  startDate: { type: Date },
-  endDate: { type: Date },
-  teacherPositions: [{ type: mongoose.Schema.Types.ObjectId, ref: "TeacherPosition" }],
-  degrees: [
-    {
-      type: { type: String }, // Cử nhân, Thạc sĩ, ...
-      school: { type: String },
-      major: { type: String },
-      year: { type: Number },
-      isGraduated: { type: Boolean },
+const teacherSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
-  ],
+    isActive: { type: Boolean, default: true },
+    isDeleted: { type: Boolean, default: false },
+    code: { type: String, required: true, unique: true },
+    startDate: { type: Date },
+    endDate: { type: Date },
+    teacherPositionsId: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "TeacherPosition" },
+    ], // giữ nguyên dữ liệu
+    degrees: [
+      {
+        type: { type: String },
+        school: { type: String },
+        major: { type: String },
+        year: { type: Number },
+        isGraduated: { type: Boolean },
+      },
+    ],
+  },
+  { timestamps: true }
+);
+
+// Virtual populate để vẫn có field teacherPositions khi populate
+teacherSchema.virtual("teacherPositions", {
+  ref: "TeacherPosition",
+  localField: "teacherPositionsId",
+  foreignField: "_id",
 });
 
-module.exports = mongoose.model("Teacher", teacherSchema);
+teacherSchema.set("toObject", { virtuals: true });
+teacherSchema.set("toJSON", { virtuals: true });
+
+const Teacher = mongoose.model("Teacher", teacherSchema);
+export default Teacher;

@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const teacherPositionSchema = new mongoose.Schema({
   name: { type: String, required: true },
@@ -8,4 +8,5 @@ const teacherPositionSchema = new mongoose.Schema({
   isDeleted: { type: Boolean, default: false },
 });
 
-module.exports = mongoose.model("TeacherPosition", teacherPositionSchema);
+const TeacherPosition = mongoose.model("TeacherPosition", teacherPositionSchema);
+export default TeacherPosition;
